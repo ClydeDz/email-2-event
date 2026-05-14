@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Email → Calendar / Tasks",
+  "version": "0.1.0",
+  "description": "Create Google Calendar events and Tasks from Gmail emails using on-device AI.",
+  "permissions": ["storage", "identity", "scripting", "tabs"],
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://www.googleapis.com/*",
+    "https://calendar.google.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["src/content/gmail.ts"],
+      "css": [],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "src/landing/dashboard.html",
+  "action": {
+    "default_title": "Email → Calendar / Tasks",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "oauth2": {
+    "client_id": "517551690047-vnb7joiqji52dobtvpkbt8ls0dpal6ro.apps.googleusercontent.com",
+    "scopes": [
+      "openid",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/tasks"
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content/modal.css"],
+      "matches": ["https://mail.google.com/*"]
+    }
+  ],
+  "minimum_chrome_version": "138"
+}
