@@ -473,13 +473,6 @@ main {
   flex: 1;
 }
 
-.tile-locked-reason {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-  font-style: italic;
-  margin-top: var(--space-2);
-}
-
 .tile-badge {
   position: absolute;
   top: var(--space-4);
@@ -562,7 +555,7 @@ main {
 
 .btn-sm {
   font-size: 13px;
-  padding: 6px 12px;
+  padding: 7px 12px;
 }
 
 .btn-primary {
@@ -589,7 +582,7 @@ main {
 .btn-ghost {
   background: transparent;
   color: var(--color-text-secondary);
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
 }
 
 .btn-ghost:hover:not(:disabled) {
@@ -778,7 +771,11 @@ main {
 }
 
 .duration-btn {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 6px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg);

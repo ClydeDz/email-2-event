@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Email → Calendar / Tasks",
-  "version": "0.1.0",
+  "name": "Email 2 Event",
+  "version": "0.2.0",
   "description": "Create Google Calendar events and Tasks from Gmail emails using on-device AI.",
   "permissions": ["storage", "identity", "scripting", "tabs"],
   "host_permissions": [
@@ -23,7 +23,7 @@
   ],
   "options_page": "src/landing/dashboard.html",
   "action": {
-    "default_title": "Email → Calendar / Tasks",
+    "default_title": "Email 2 Event",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -31,7 +31,7 @@
     }
   },
   "oauth2": {
-    "client_id": "517551690047-vnb7joiqji52dobtvpkbt8ls0dpal6ro.apps.googleusercontent.com",
+    "client_id": "$OAUTH_CLIENT_ID",
     "scopes": [
       "openid",
       "https://www.googleapis.com/auth/userinfo.profile",

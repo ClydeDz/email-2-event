@@ -1,10 +1,3 @@
-// Declare LanguageModel global
-declare const LanguageModel: {
-  availability(options?: {
-    expectedOutputLanguages?: string[];
-  }): Promise<string>;
-};
-
 export function renderDiagnosticsCard(): HTMLElement {
   const details = document.createElement("details");
   details.className = "diagnostics-card";
@@ -31,18 +24,14 @@ export function renderDiagnosticsCard(): HTMLElement {
   aiRow.appendChild(aiValue);
   body.appendChild(aiRow);
 
-  // Check availability
-  if (typeof LanguageModel !== "undefined") {
-    LanguageModel.availability({ expectedOutputLanguages: ["en"] })
-      .then((val: string) => {
-        aiValue.textContent = val;
-      })
-      .catch(() => {
-        aiValue.textContent = "error";
-      });
-  } else {
-    aiValue.textContent = "LanguageModel API not found";
-  }
+  // Check availability via background service worker to avoid direct LanguageModel calls in page context
+  chrome.runtime.sendMessage({ type: "CHECK_AI_AVAILABILITY" }, (response) => {
+    if (chrome.runtime.lastError || !response) {
+      aiValue.textContent = "error";
+    } else {
+      aiValue.textContent = response.status ?? "error";
+    }
+  });
 
   // ── Gmail selector probe ──
   const probeRow = document.createElement("div");
@@ -164,7 +153,6 @@ export function renderDiagnosticsCard(): HTMLElement {
         payload: {
           subject: "(test)",
           from: "(test)",
-          date: new Date().toISOString(),
           bodyText: text,
           intent,
         },

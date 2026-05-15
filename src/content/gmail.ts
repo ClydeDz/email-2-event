@@ -101,9 +101,15 @@ function showSignInPopup(anchorEl: HTMLElement): void {
     color: "#0a2540",
   });
 
+  // Find a scrollable container within the email content to append the popup to
+  const scrollContainer = anchorEl.closest('[role="main"]') || document.body;
+  scrollContainer.appendChild(popup);
+
   const rect = anchorEl.getBoundingClientRect();
-  popup.style.top = `${rect.bottom + window.scrollY + 6}px`;
-  popup.style.left = `${rect.left + window.scrollX}px`;
+  const containerRect = scrollContainer.getBoundingClientRect();
+
+  popup.style.top = `${rect.bottom - containerRect.top + 6}px`;
+  popup.style.left = `${rect.left - containerRect.left - 240}px`;
 
   const msg = document.createElement("p");
   msg.style.marginBottom = "10px";
@@ -141,7 +147,6 @@ function showSignInPopup(anchorEl: HTMLElement): void {
 
   popup.appendChild(msg);
   popup.appendChild(signInBtn);
-  document.body.appendChild(popup);
 
   // Dismiss on outside click
   const dismiss = (e: MouseEvent): void => {
@@ -352,6 +357,7 @@ function injectButtons(): void {
     setButtonLoading(eventBtn, true, EVENT_LABEL);
     try {
       const emailData = scrapeEmail();
+   
       if (!emailData) {
         showToast("Could not read this email. Please try again.", "error");
         return;
@@ -361,6 +367,7 @@ function injectButtons(): void {
         "Extracting event details… this may take a few moments.",
         "info",
       );
+    
       const extraction: Extraction = await runExtraction(emailData, "event");
 
       await sendMessage({ type: "OPEN_CALENDAR", payload: extraction });
@@ -380,15 +387,11 @@ function injectButtons(): void {
   taskBtn.addEventListener("click", async () => {
     setButtonLoading(taskBtn, true, TASK_LABEL);
     try {
-      console.log("[gmail.ts] Task button clicked");
       // Check sign-in state
       const { profile } = await sendMessage<{ profile: unknown }>({
         type: "GET_PROFILE",
       });
-      console.log(
-        "[gmail.ts] Profile check:",
-        profile ? "signed in" : "not signed in",
-      );
+  
 
       if (!profile) {
         setButtonLoading(taskBtn, false, TASK_LABEL);
@@ -397,10 +400,7 @@ function injectButtons(): void {
       }
 
       const emailData = scrapeEmail();
-      console.log(
-        "[gmail.ts] Email data scraped:",
-        emailData ? "success" : "failed",
-      );
+     
       if (!emailData) {
         showToast("Could not read this email. Please try again.", "error");
         setButtonLoading(taskBtn, false, TASK_LABEL);
@@ -411,9 +411,7 @@ function injectButtons(): void {
         "Extracting task details… this may take a few moments.",
         "info",
       );
-      console.log("[gmail.ts] Starting extraction...");
       const extraction: Extraction = await runExtraction(emailData, "task");
-      console.log("[gmail.ts] Extraction complete:", extraction);
 
       // Get task lists
       let taskLists: TaskList[] = [];
@@ -518,7 +516,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       toolbar: !!findMessageToolbar(true),
       subject: findMessageSubject() || null,
       from: findMessageFrom() || null,
-      date: findMessageDate(true) || null,
       bodyLength: findMessageBody(true)?.length ?? 0,
     };
     sendResponse(results);
@@ -526,14 +523,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "TEST_EXTRACTION") {
-    const { subject, from, date, bodyText, intent } = message.payload as {
+    const { subject, from, bodyText, intent } = message.payload as {
       subject: string;
       from: string;
-      date: string;
       bodyText: string;
       intent: "event" | "task";
     };
-    runExtraction({ subject, from, date, bodyText }, intent)
+    runExtraction({ subject, from, bodyText }, intent)
       .then((result) => sendResponse({ ok: true, extraction: result }))
       .catch((err) =>
         sendResponse({ ok: false, error: (err as Error).message }),

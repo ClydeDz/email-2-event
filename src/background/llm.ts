@@ -71,7 +71,11 @@ export async function runExtraction(
     );
   }
 
-  const systemPrompt = buildSystemPrompt(intent);
+  // Fetch user's timezone preference from storage, fall back to system timezone
+  const storage = await chrome.storage.local.get("defaults");
+  const userTimezone = storage.defaults?.timezone;
+
+  const systemPrompt = buildSystemPrompt(intent, userTimezone);
 
   // expectedOutputLanguages silences Chrome's "No output language specified" console warning.
   // We use systemPrompt (string) rather than initialPrompts (array) — the string form is
@@ -85,7 +89,6 @@ export async function runExtraction(
     const userMessage = [
       `Subject: ${emailData.subject}`,
       `From: ${emailData.from}`,
-      `Date: ${emailData.date}`,
       "",
       emailData.bodyText,
     ].join("\n");
@@ -97,6 +100,7 @@ export async function runExtraction(
     const parsed = JSON.parse(
       typeof raw === "string" ? raw : JSON.stringify(raw),
     );
+
     // Force kind to match the button the user clicked
     return ExtractionSchema.parse({ ...parsed, kind: intent });
   } finally {

@@ -15,21 +15,16 @@ export function renderPrivacyCard(): HTMLElement {
 
   body.innerHTML = `
     <p>
-      This extension reads the email you have open in Gmail — only when you click one of the
+      This extension reads the email you have open in Gmail only when you click one of the
       two action buttons. The email content is processed exclusively by Chrome's built-in
-      on-device AI (Gemini Nano). Nothing is sent to any external server.
+      on-device AI (Gemini Nano). Your emails are never stored by this extension.
     </p>
     <p>
       Your Google account is used only to create Tasks you explicitly save. The extension
       requests the <code>tasks</code> scope, <code>openid</code>, <code>profile</code>,
-      and <code>email</code> scopes — nothing else.
-      No Gmail API scopes are requested; the extension reads your email from the DOM, not
+      and <code>email</code> scopes. No Gmail API scopes are requested; the extension reads your email from the DOM, not
       via the Gmail API.
     </p> 
-    <p>
-      Email content stays on your device. No inference servers. No data collection. Your emails are never stored by this extension.
-    </p>
-      
   `;
 
   card.appendChild(body);

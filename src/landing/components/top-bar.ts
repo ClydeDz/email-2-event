@@ -24,7 +24,7 @@ export function renderTopBar(profile: Profile | null): void {
   wordmark.className = "wordmark";
   wordmark.innerHTML = `
     <div class="wordmark-icon">✉</div>
-    <span>Email → Calendar / Tasks</span>
+    <span>Email 2 Event</span>
   `;
   inner.appendChild(wordmark);
 

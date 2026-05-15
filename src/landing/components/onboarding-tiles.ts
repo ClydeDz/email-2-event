@@ -60,29 +60,18 @@ export function renderOnboardingTiles(state: DashboardState): void {
 
   section.appendChild(header);
 
-  // Show unavailable AI banner if needed
-  if (state.aiStatus === "unavailable") {
-    const banner = document.createElement("div");
-    banner.className = "ai-unavailable-banner";
-    banner.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
-      <span>On-device AI is not available on this device. Gemini Nano requires compatible hardware and Chrome 138+. BYO API key support is coming in v1.1.</span>
-    `;
-    section.appendChild(banner);
-  }
-
   const grid = document.createElement("div");
   grid.className = "tiles-grid";
   section.appendChild(grid);
 
   const isSignedIn = !!state.profile;
   const completedTiles = state.completedTiles;
+  const aiAvailable = state.aiStatus === "available";
 
-  // Tile 1: Create an event
+  // Tile 1: Enable on-device AI
+  grid.appendChild(buildDownloadModelTile(state.aiStatus));
+
+  // Tile 2: Create an event
   grid.appendChild(
     buildTile({
       id: "create-event",
@@ -90,7 +79,7 @@ export function renderOnboardingTiles(state: DashboardState): void {
       title: "Create an event from Gmail",
       body: "Open any email in Gmail and click <em>+ Create event</em> in the message toolbar.",
       done: completedTiles.includes("create-event"),
-      locked: false,
+      locked: !aiAvailable,
       actions: [
         {
           label: "Open Gmail",
@@ -103,7 +92,7 @@ export function renderOnboardingTiles(state: DashboardState): void {
     }),
   );
 
-  // Tile 2: Review on Chrome Web Store
+  // Tile 3: Review on Chrome Web Store
   grid.appendChild(
     buildTile({
       id: "leave-review",
@@ -111,7 +100,7 @@ export function renderOnboardingTiles(state: DashboardState): void {
       title: "Review us on the Chrome Web Store",
       body: "Enjoying the extension? A quick review helps other users discover it.",
       done: completedTiles.includes("leave-review"),
-      locked: false,
+      locked: !aiAvailable,
       actions: [
         {
           label: "Leave a review",
@@ -130,7 +119,7 @@ export function renderOnboardingTiles(state: DashboardState): void {
     }),
   );
 
-  // Tile 3: Sign in
+  // Tile 4: Sign in
   const tile2Done = isSignedIn || completedTiles.includes("sign-in");
   grid.appendChild(
     buildTile({
@@ -139,7 +128,7 @@ export function renderOnboardingTiles(state: DashboardState): void {
       title: "Sign in with Google",
       body: "Connect your account to create Google Tasks from emails.",
       done: tile2Done,
-      locked: false,
+      locked: !aiAvailable,
       actions: tile2Done
         ? []
         : [
@@ -173,7 +162,7 @@ export function renderOnboardingTiles(state: DashboardState): void {
     }),
   );
 
-  // Tile 3: Create a task (gated on tile 2)
+  // Tile 5: Create a task (gated on tile 4)
   grid.appendChild(
     buildTile({
       id: "create-task",
@@ -181,8 +170,7 @@ export function renderOnboardingTiles(state: DashboardState): void {
       title: "Create a task from Gmail",
       body: "Try the Tasks button on an invoice or reminder email.",
       done: completedTiles.includes("create-task"),
-      locked: !tile2Done,
-      lockedReason: "Sign in first to unlock Tasks",
+      locked: !aiAvailable || !tile2Done,
       actions: [
         {
           label: "Open Gmail",
@@ -195,11 +183,62 @@ export function renderOnboardingTiles(state: DashboardState): void {
     }),
   );
 
-  // Tile 4: Download AI model (only if downloadable)
-  // TEMPORARY: Mark as done for preview
-  if (state.aiStatus === "downloadable" || true) {
-    grid.appendChild(buildDownloadModelTile(true));
-  }
+  // Tile 6: Share with friends
+  grid.appendChild(
+    buildTile({
+      id: "share-with-friends",
+      icon: shareIcon(),
+      title: "Share with friends",
+      body: "Help others discover this extension by sharing it with your friends and colleagues.",
+      done: completedTiles.includes("share-with-friends"),
+      locked: !aiAvailable,
+      actions: [
+        {
+          label: "Copy link",
+          primary: true,
+          onClick: async (btn) => {
+            const url = `https://chrome.google.com/webstore/detail/${chrome.runtime.id}`;
+            await navigator.clipboard.writeText(url);
+            btn.textContent = "Copied!";
+            setTimeout(() => {
+              btn.textContent = "Copy link";
+            }, 2000);
+            const updated = Array.from(
+              new Set([...completedTiles, "share-with-friends"]),
+            );
+            await chrome.storage.local.set({ completedTiles: updated });
+            renderOnboardingTiles({ ...state, completedTiles: updated });
+          },
+        },
+      ],
+    }),
+  );
+
+  // Tile 7: Support developer
+  grid.appendChild(
+    buildTile({
+      id: "support-developer",
+      icon: coffeeIcon(),
+      title: "Support the developer",
+      body: "Enjoying this extension? Buy me a coffee to support continued development.",
+      done: completedTiles.includes("support-developer"),
+      locked: !aiAvailable,
+      actions: [
+        {
+          label: "Buy a coffee",
+          primary: true,
+          onClick: async () => {
+            chrome.tabs.create({ url: "https://ko-fi.com" });
+            const updated = Array.from(
+              new Set([...completedTiles, "support-developer"]),
+            );
+            await chrome.storage.local.set({ completedTiles: updated });
+            renderOnboardingTiles({ ...state, completedTiles: updated });
+          },
+        },
+      ],
+    }),
+  );
 
   wireCarouselControls(grid, prevBtn, nextBtn, headerText);
 }
@@ -216,7 +255,7 @@ function wireCarouselControls(
   const completed = tiles.filter((t) =>
     t.classList.contains("tile-done"),
   ).length;
-  if (counterEl) counterEl.textContent = `${completed}/${total}`;
+  if (counterEl) counterEl.textContent = `${completed}/${total} completed`;
 
   function getCurrentIndex(): number {
     const scrollLeft = grid.scrollLeft;
@@ -265,7 +304,6 @@ interface TileConfig {
   body: string;
   done: boolean;
   locked: boolean;
-  lockedReason?: string;
   actions?: Array<{
     label: string;
     primary: boolean;
@@ -296,7 +334,7 @@ function buildTile(config: TileConfig): HTMLElement {
   if (config.locked) {
     const lockIcon = document.createElement("div");
     lockIcon.className = "tile-lock-icon";
-    lockIcon.title = config.lockedReason ?? "Locked";
+    lockIcon.title = "Locked";
     lockIcon.innerHTML = `
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -316,15 +354,14 @@ function buildTile(config: TileConfig): HTMLElement {
   const bodyEl = document.createElement("div");
   bodyEl.className = "tile-body";
   bodyEl.innerHTML = config.body;
-  tile.appendChild(bodyEl);
-
-  // Locked reason
-  if (config.locked && config.lockedReason) {
-    const lockedReasonEl = document.createElement("div");
-    lockedReasonEl.className = "tile-locked-reason";
-    lockedReasonEl.textContent = config.lockedReason;
-    tile.appendChild(lockedReasonEl);
+  if (config.locked) {
+    if (config.id === "create-task") {
+      bodyEl.innerHTML += " Sign in with Google to unlock this.";
+    } else {
+      bodyEl.innerHTML += " Enable on-device AI to unlock this.";
+    }
   }
+  tile.appendChild(bodyEl);
 
   // Actions
   if (!config.locked && config.actions && config.actions.length > 0) {
@@ -347,23 +384,15 @@ function buildTile(config: TileConfig): HTMLElement {
   return tile;
 }
 
-function buildDownloadModelTile(done: boolean = false): HTMLElement {
+function buildDownloadModelTile(aiStatus: string): HTMLElement {
   const tile = document.createElement("div");
-  tile.className = `tile ${done ? "tile-done" : ""}`;
+  tile.className = "tile";
   tile.setAttribute("data-tile-id", "download-ai");
 
   const iconEl = document.createElement("div");
-  iconEl.className = `tile-icon ${done ? "done" : ""}`;
+  iconEl.className = "tile-icon";
   iconEl.innerHTML = cpuIcon();
   tile.appendChild(iconEl);
-
-  // Done badge
-  if (done) {
-    const badge = document.createElement("div");
-    badge.className = "tile-badge";
-    badge.innerHTML = '<span class="pill pill-success">Done</span>';
-    tile.appendChild(badge);
-  }
 
   const titleEl = document.createElement("div");
   titleEl.className = "tile-title";
@@ -372,13 +401,10 @@ function buildDownloadModelTile(done: boolean = false): HTMLElement {
 
   const bodyEl = document.createElement("div");
   bodyEl.className = "tile-body";
-  bodyEl.textContent =
-    "Download Gemini Nano (~2 GB) so extraction runs privately on this device.";
-  tile.appendChild(bodyEl);
 
-  // Progress bar (hidden initially but takes up space)
+  // Progress bar (hidden initially)
   const progressWrapper = document.createElement("div");
-  progressWrapper.style.visibility = "hidden";
+  progressWrapper.style.display = "none";
   progressWrapper.style.height = "40px";
   const progressBar = document.createElement("div");
   progressBar.className = "progress-bar";
@@ -394,8 +420,24 @@ function buildDownloadModelTile(done: boolean = false): HTMLElement {
   progressWrapper.appendChild(progressLabel);
   tile.appendChild(progressWrapper);
 
-  // Only show download actions if not done
-  if (!done) {
+  if (aiStatus === "available") {
+    // Model installed and ready
+    tile.classList.add("tile-done");
+    iconEl.classList.add("done");
+    bodyEl.textContent =
+      "Gemini Nano is installed and ready. Email processing happens entirely on this device.";
+    tile.appendChild(bodyEl);
+
+    const badge = document.createElement("div");
+    badge.className = "tile-badge";
+    badge.innerHTML = '<span class="pill pill-success">Done</span>';
+    tile.appendChild(badge);
+  } else if (aiStatus === "downloadable") {
+    // Hardware compatible, model needs download
+    bodyEl.textContent =
+      "Download Gemini Nano (~2 GB) so extraction runs privately on this device.";
+    tile.appendChild(bodyEl);
+
     const actionsEl = document.createElement("div");
     actionsEl.style.marginTop = "4px";
     actionsEl.style.display = "flex";
@@ -418,7 +460,7 @@ function buildDownloadModelTile(done: boolean = false): HTMLElement {
         downloadBtn.disabled = false;
         downloadBtn.textContent = "Download model";
         cancelBtn.style.display = "none";
-        progressWrapper.style.visibility = "hidden";
+        progressWrapper.style.display = "none";
         progressLabel.textContent = "";
         progressFill.style.width = "0%";
       }
@@ -433,7 +475,7 @@ function buildDownloadModelTile(done: boolean = false): HTMLElement {
       downloadBtn.disabled = true;
       downloadBtn.innerHTML =
         '<span class="spinner spinner-white"></span> Starting…';
-      progressWrapper.style.visibility = "visible";
+      progressWrapper.style.display = "block";
       cancelBtn.style.display = "inline-flex";
       abortController = new AbortController();
 
@@ -452,20 +494,37 @@ function buildDownloadModelTile(done: boolean = false): HTMLElement {
                 progressLabel.textContent = "Download complete!";
                 downloadBtn.textContent = "Downloaded ✓";
                 cancelBtn.style.display = "none";
-                // Refresh to show updated status
-                setTimeout(() => window.location.reload(), 1500);
+                // Check the new AI status and update storage
+                setTimeout(async () => {
+                  try {
+                    const response = await chrome.runtime.sendMessage({
+                      type: "CHECK_AI_AVAILABILITY",
+                    });
+                    const newStatus = response.status;
+                    await chrome.storage.local.set({ aiStatus: newStatus });
+                    // Refresh to show updated status
+                    window.location.reload();
+                  } catch (err) {
+                    console.error(
+                      "Failed to check AI status after download:",
+                      err,
+                    );
+                    // Still reload even if check fails
+                    window.location.reload();
+                  }
+                }, 1500);
               }
             });
           },
         });
       } catch (err: unknown) {
         if ((err as Error).name === "AbortError") {
-          console.log("Download cancelled by user");
+          console.info("Download cancelled by user");
         } else {
           downloadBtn.disabled = false;
           downloadBtn.textContent = "Download model";
           cancelBtn.style.display = "none";
-          progressWrapper.style.visibility = "hidden";
+          progressWrapper.style.display = "none";
           console.error("Model download failed:", err);
           alert("Download failed. Please try again.");
         }
@@ -475,6 +534,61 @@ function buildDownloadModelTile(done: boolean = false): HTMLElement {
     actionsEl.appendChild(downloadBtn);
     actionsEl.appendChild(cancelBtn);
     tile.appendChild(actionsEl);
+  } else if (aiStatus === "downloading") {
+    // Model currently downloading
+    bodyEl.textContent = "Gemini Nano is currently downloading.";
+    tile.appendChild(bodyEl);
+
+    progressWrapper.style.display = "block";
+    progressLabel.textContent = "Downloading…";
+
+    const actionsEl = document.createElement("div");
+    actionsEl.style.marginTop = "4px";
+    actionsEl.style.display = "flex";
+    actionsEl.style.gap = "8px";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn btn-sm btn-ghost";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", () => {
+      // Trigger state refresh to cancel download
+      window.location.reload();
+    });
+
+    actionsEl.appendChild(cancelBtn);
+    tile.appendChild(actionsEl);
+  } else if (aiStatus === "unavailable") {
+    // Hardware incompatible or Chrome version too old
+    bodyEl.textContent =
+      "Gemini Nano is not available on this device. It requires compatible hardware (≥4 GB VRAM or capable iGPU), Chrome 138+, and all Chrome AI flags enabled.";
+    tile.appendChild(bodyEl);
+
+    const actionsEl = document.createElement("div");
+    actionsEl.style.marginTop = "4px";
+    actionsEl.style.display = "flex";
+    actionsEl.style.gap = "8px";
+
+    const checkUpdatesBtn = document.createElement("button");
+    checkUpdatesBtn.className = "btn btn-sm btn-primary";
+    checkUpdatesBtn.textContent = "Check for updates";
+    checkUpdatesBtn.addEventListener("click", () => {
+      chrome.tabs.create({ url: "chrome://settings/help" });
+    });
+
+    const flagsBtn = document.createElement("button");
+    flagsBtn.className = "btn btn-sm btn-primary";
+    flagsBtn.textContent = "Chrome flags";
+    flagsBtn.addEventListener("click", () => {
+      chrome.tabs.create({ url: "chrome://flags/" });
+    });
+
+    actionsEl.appendChild(checkUpdatesBtn);
+    actionsEl.appendChild(flagsBtn);
+    tile.appendChild(actionsEl);
+  } else {
+    // Checking status
+    bodyEl.textContent = "Checking availability of on-device AI…";
+    tile.appendChild(bodyEl);
   }
 
   return tile;
@@ -506,6 +620,26 @@ function starIcon(): string {
 function checkIcon(): string {
   return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <polyline points="20 6 9 17 4 12"/>
+  </svg>`;
+}
+
+function shareIcon(): string {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="18" cy="5" r="3"/>
+    <circle cx="6" cy="12" r="3"/>
+    <circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>`;
+}
+
+function coffeeIcon(): string {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+    <line x1="6" y1="1" x2="6" y2="4"/>
+    <line x1="10" y1="1" x2="10" y2="4"/>
+    <line x1="14" y1="1" x2="14" y2="4"/>
   </svg>`;
 }
 

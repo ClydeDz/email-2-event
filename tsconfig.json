@@ -7,9 +7,10 @@
     "lib": ["ES2022", "DOM"],
     "types": ["chrome"],
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/**/*", "manifest.json"]
+  "include": ["src/**/*"]
 }

@@ -1,18 +1,10 @@
 import { renderTopBar } from "./components/top-bar";
 import { renderOnboardingTiles } from "./components/onboarding-tiles";
 import { renderAiStatusCard } from "./components/ai-status-card";
-import { renderLlmProviderCard } from "./components/llm-provider-card";
 import { renderDefaultsCard } from "./components/defaults-card";
 import { renderPrivacyCard } from "./components/privacy-card";
 import { renderDiagnosticsCard } from "./components/diagnostics-card";
 import type { DashboardState } from "../shared/types";
-
-// Declare LanguageModel global
-declare const LanguageModel: {
-  availability(options?: {
-    expectedOutputLanguages?: string[];
-  }): Promise<string>;
-};
 
 let currentState: DashboardState | null = null;
 
@@ -30,26 +22,18 @@ function sendMessage<T>(message: unknown): Promise<T> {
   });
 }
 
-async function detectAiStatus(): Promise<DashboardState["aiStatus"]> {
-  if (typeof LanguageModel === "undefined") return "unavailable";
-  try {
-    const status = await LanguageModel.availability({
-      expectedOutputLanguages: ["en"],
-    });
-    switch (status) {
-      case "available":
-        return "available";
-      case "downloadable":
-        return "downloadable";
-      case "downloading":
-        return "downloading";
-      case "unavailable":
-        return "unavailable";
-      default:
-        return "unknown";
-    }
-  } catch {
-    return "unavailable";
+function mapAiStatus(status: string): DashboardState["aiStatus"] {
+  switch (status) {
+    case "available":
+      return "available";
+    case "downloadable":
+      return "downloadable";
+    case "downloading":
+      return "downloading";
+    case "unavailable":
+      return "unavailable";
+    default:
+      return "unknown";
   }
 }
 
@@ -61,8 +45,7 @@ function renderSettingsSection(state: DashboardState): void {
 
   const header = document.createElement("div");
   header.className = "section-header";
-  header.innerHTML =
-    "<h2>Settings</h2><p>Configure your defaults and AI provider.</p>";
+  header.innerHTML = "<h2>Settings</h2><p>Configure your defaults.</p>";
   settings.appendChild(header);
 
   const cardsGrid = document.createElement("div");
@@ -73,9 +56,6 @@ function renderSettingsSection(state: DashboardState): void {
 
   const aiCard = renderAiStatusCard(state.aiStatus);
   cardsGrid.appendChild(aiCard);
-
-  const providerCard = renderLlmProviderCard(state.llmProvider);
-  cardsGrid.appendChild(providerCard);
 
   const defaultsCard = renderDefaultsCard(state.defaults, state.profile);
   cardsGrid.appendChild(defaultsCard);
@@ -91,14 +71,19 @@ function renderFooter(): void {
   const footer = document.getElementById("footer");
   if (!footer) return;
 
+  const manifest = chrome.runtime.getManifest();
+  const version = manifest.version;
+
   footer.innerHTML = `
-    <span>Email → Calendar / Tasks v0.1.0</span>
+    <span>Email 2 Event v${version}</span>
     <div class="footer-links">
       <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
       <a href="mailto:support@example.com">Support</a>
     </div>
   `;
 }
+
+let pollingInterval: number | null = null;
 
 async function init(): Promise<void> {
   try {
@@ -107,8 +92,11 @@ async function init(): Promise<void> {
       type: "GET_DASHBOARD_STATE",
     });
 
-    // Detect real-time AI status (must be done from the page context)
-    const aiStatus = await detectAiStatus();
+    // Get AI status from the background service worker to avoid direct LanguageModel calls in page context
+    const { status } = await sendMessage<{ status: string }>({
+      type: "CHECK_AI_AVAILABILITY",
+    });
+    const aiStatus = mapAiStatus(status);
     const fullState: DashboardState = { ...state, aiStatus };
 
     // Cache AI status in storage so background can return it
@@ -133,6 +121,11 @@ async function init(): Promise<void> {
         renderSettingsSection(currentState);
       }
     });
+
+    // Start polling if AI status is downloading
+    if (fullState.aiStatus === "downloading") {
+      startPolling();
+    }
   } catch (err) {
     console.error("[dashboard] Failed to initialize:", err);
     // Show a minimal error state
@@ -145,6 +138,38 @@ async function init(): Promise<void> {
         </div>
       `;
     }
+  }
+}
+
+function startPolling(): void {
+  if (pollingInterval !== null) return;
+
+  pollingInterval = window.setInterval(async () => {
+    try {
+      const { status } = await sendMessage<{ status: string }>({
+        type: "CHECK_AI_AVAILABILITY",
+      });
+      const newStatus = mapAiStatus(status);
+
+      if (newStatus !== currentState?.aiStatus) {
+        await chrome.storage.local.set({ aiStatus: newStatus });
+        // Storage change listener will handle re-render
+      }
+
+      // Stop polling if status is no longer downloading
+      if (newStatus !== "downloading") {
+        stopPolling();
+      }
+    } catch (err) {
+      console.error("[dashboard] Polling error:", err);
+    }
+  }, 2000); // Poll every 2 seconds
+}
+
+function stopPolling(): void {
+  if (pollingInterval !== null) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
   }
 }
 
@@ -175,11 +200,21 @@ function handleStorageChange(
   }
 
   if (changes.aiStatus) {
+    const oldStatus = changes.aiStatus.oldValue;
+    const newStatus = changes.aiStatus.newValue ?? "unknown";
+
     currentState = {
       ...currentState,
-      aiStatus: changes.aiStatus.newValue ?? "unknown",
+      aiStatus: newStatus,
     };
     needsRender = true;
+
+    // Start or stop polling based on status change
+    if (newStatus === "downloading" && oldStatus !== "downloading") {
+      startPolling();
+    } else if (newStatus !== "downloading" && oldStatus === "downloading") {
+      stopPolling();
+    }
   }
 
   if (changes.defaults) {
