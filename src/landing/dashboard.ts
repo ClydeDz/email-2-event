@@ -76,9 +76,11 @@ function renderFooter(): void {
 
   footer.innerHTML = `
     <span>Email 2 Event v${version}</span>
+    <img src="../../icons/icon.svg" alt="Email 2 Event" class="footer-logo" />
     <div class="footer-links">
-      <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
-      <a href="mailto:support@example.com">Support</a>
+      <a href="https://ko-fi.com/clydedsouza" target="_blank" rel="noopener">Buy me a coffee</a>
+      <a href="https://github.com/ClydeDz/email-2-event/issues/new" target="_blank" rel="noopener">Support</a>
+      <a href="https://github.com/ClydeDz/email-2-event/blob/main/docs/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
     </div>
   `;
 }

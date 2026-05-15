@@ -23,7 +23,7 @@ export function renderTopBar(profile: Profile | null): void {
   const wordmark = document.createElement("div");
   wordmark.className = "wordmark";
   wordmark.innerHTML = `
-    <div class="wordmark-icon">✉</div>
+    <img src="../../icons/icon.svg" alt="Email 2 Event" class="wordmark-icon" />
     <span>Email 2 Event</span>
   `;
   inner.appendChild(wordmark);

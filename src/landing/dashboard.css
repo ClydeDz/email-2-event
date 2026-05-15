@@ -57,7 +57,7 @@ body {
   width: 28px;
   height: 28px;
   background: var(--color-accent);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -926,6 +926,12 @@ details.diagnostics-card[open] > summary::after {
 
 .footer-links a:hover {
   color: var(--color-text-secondary);
+}
+
+.footer-logo {
+  width: 30px;
+  height: 30px;
+  filter: brightness(0) opacity(0.4);
 }
 
 /* ── Unavailable AI banner ── */
