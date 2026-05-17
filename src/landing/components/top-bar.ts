@@ -1,4 +1,5 @@
 import type { Profile } from "../../shared/types";
+import { featureFlags } from "../../shared/config";
 
 function sendMessage<T>(message: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -79,8 +80,8 @@ function buildIdentityChip(profile: Profile | null): HTMLElement {
       };
       setTimeout(() => document.addEventListener("click", dismiss), 0);
     });
-  } else {
-    // Signed out: Google-compliant sign-in button
+  } else if (featureFlags.enableTaskCreation) {
+    // Signed out: Google-compliant sign-in button (only if task creation is enabled)
     chip.className = "google-signin-btn";
 
     const logo = document.createElement("div");
@@ -115,6 +116,9 @@ function buildIdentityChip(profile: Profile | null): HTMLElement {
         console.error("Sign-in failed:", err);
       }
     });
+  } else {
+    // Task creation disabled: hide the chip entirely
+    chip.style.display = "none";
   }
 
   return chip;

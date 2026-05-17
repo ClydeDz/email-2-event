@@ -1,4 +1,5 @@
 import type { DashboardState, TaskList } from "../../shared/types";
+import { featureFlags } from "../../shared/config";
 
 function sendMessage<T>(message: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -32,69 +33,71 @@ export function renderDefaultsCard(
   const isSignedIn = !!profile;
 
   // ── Task list selector ──
-  const listGroup = document.createElement("div");
-  listGroup.className = "form-group";
+  if (featureFlags.enableTaskCreation) {
+    const listGroup = document.createElement("div");
+    listGroup.className = "form-group";
 
-  const listLabel = document.createElement("label");
-  listLabel.className = "form-label";
-  listLabel.htmlFor = "default-task-list";
-  listLabel.textContent = "Default task list";
+    const listLabel = document.createElement("label");
+    listLabel.className = "form-label";
+    listLabel.htmlFor = "default-task-list";
+    listLabel.textContent = "Default task list";
 
-  const listSelect = document.createElement("select");
-  listSelect.className = "form-select";
-  listSelect.id = "default-task-list";
-  listSelect.disabled = !isSignedIn;
+    const listSelect = document.createElement("select");
+    listSelect.className = "form-select";
+    listSelect.id = "default-task-list";
+    listSelect.disabled = !isSignedIn;
 
-  if (!isSignedIn) {
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "Sign in to see your task lists";
-    listSelect.appendChild(opt);
-  } else {
-    const defaultOpt = document.createElement("option");
-    defaultOpt.value = "@default";
-    defaultOpt.textContent = "My Tasks (default)";
-    listSelect.appendChild(defaultOpt);
-  }
+    if (!isSignedIn) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Sign in to see your task lists";
+      listSelect.appendChild(opt);
+    } else {
+      const defaultOpt = document.createElement("option");
+      defaultOpt.value = "@default";
+      defaultOpt.textContent = "My Tasks (default)";
+      listSelect.appendChild(defaultOpt);
+    }
 
-  const listHelper = document.createElement("div");
-  listHelper.className = "form-helper";
-  listHelper.textContent = "Tasks will be added to this list by default.";
+    const listHelper = document.createElement("div");
+    listHelper.className = "form-helper";
+    listHelper.textContent = "Tasks will be added to this list by default.";
 
-  listGroup.appendChild(listLabel);
-  listGroup.appendChild(listSelect);
-  listGroup.appendChild(listHelper);
-  card.appendChild(listGroup);
+    listGroup.appendChild(listLabel);
+    listGroup.appendChild(listSelect);
+    listGroup.appendChild(listHelper);
+    card.appendChild(listGroup);
 
-  // Load task lists if signed in
-  if (isSignedIn) {
-    sendMessage<{ taskLists: TaskList[] }>({ type: "GET_TASK_LISTS" })
-      .then(({ taskLists }) => {
-        listSelect.innerHTML = "";
-        for (const list of taskLists) {
-          const opt = document.createElement("option");
-          opt.value = list.id;
-          opt.textContent = list.title;
-          if (list.id === defaults.taskListId) opt.selected = true;
-          listSelect.appendChild(opt);
-        }
-      })
-      .catch(() => {
-        // Keep default option
+    // Load task lists if signed in
+    if (isSignedIn) {
+      sendMessage<{ taskLists: TaskList[] }>({ type: "GET_TASK_LISTS" })
+        .then(({ taskLists }) => {
+          listSelect.innerHTML = "";
+          for (const list of taskLists) {
+            const opt = document.createElement("option");
+            opt.value = list.id;
+            opt.textContent = list.title;
+            if (list.id === defaults.taskListId) opt.selected = true;
+            listSelect.appendChild(opt);
+          }
+        })
+        .catch(() => {
+          // Keep default option
+        });
+
+      listSelect.addEventListener("change", async () => {
+        const newListId = listSelect.value;
+        const selectedOption = listSelect.options[listSelect.selectedIndex];
+        await chrome.storage.local.set({
+          defaultTaskListId: newListId,
+          defaults: {
+            ...defaults,
+            taskListId: newListId,
+            taskListName: selectedOption.textContent ?? "",
+          },
+        });
       });
-
-    listSelect.addEventListener("change", async () => {
-      const newListId = listSelect.value;
-      const selectedOption = listSelect.options[listSelect.selectedIndex];
-      await chrome.storage.local.set({
-        defaultTaskListId: newListId,
-        defaults: {
-          ...defaults,
-          taskListId: newListId,
-          taskListName: selectedOption.textContent ?? "",
-        },
-      });
-    });
+    }
   }
 
   // ── Event duration ──

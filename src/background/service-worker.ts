@@ -7,6 +7,7 @@ import { runExtraction, checkAvailability } from "./llm";
 import type { Extraction } from "../shared/schema";
 import type { EmailData } from "../content/extract";
 import type { DashboardState, TaskList } from "../shared/types";
+import { featureFlags } from "../shared/config";
 
 // Open dashboard when the toolbar icon is clicked
 chrome.action.onClicked.addListener(() => {
@@ -32,6 +33,9 @@ async function handleMessage(message: {
 }): Promise<unknown> {
   switch (message.type) {
     case "SIGN_IN": {
+      if (!featureFlags.enableTaskCreation) {
+        throw new Error("Task creation is disabled");
+      }
       const profile = await fetchAndCacheProfile();
       // Also pre-fetch task lists and cache them
       try {
@@ -51,16 +55,25 @@ async function handleMessage(message: {
     }
 
     case "SIGN_OUT": {
+      if (!featureFlags.enableTaskCreation) {
+        throw new Error("Task creation is disabled");
+      }
       await signOut();
       return { ok: true };
     }
 
     case "GET_PROFILE": {
+      if (!featureFlags.enableTaskCreation) {
+        return { profile: null };
+      }
       const profile = await getCachedProfile();
       return { profile };
     }
 
     case "GET_TASK_LISTS": {
+      if (!featureFlags.enableTaskCreation) {
+        throw new Error("Task creation is disabled");
+      }
       // Try cached first
       const cached = await chrome.storage.local.get("taskLists");
       if (cached.taskLists) {
@@ -78,6 +91,9 @@ async function handleMessage(message: {
     }
 
     case "CREATE_TASK": {
+      if (!featureFlags.enableTaskCreation) {
+        throw new Error("Task creation is disabled");
+      }
       const payload = message.payload as {
         title: string;
         due?: string;

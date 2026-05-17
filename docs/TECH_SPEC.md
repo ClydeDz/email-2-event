@@ -15,14 +15,37 @@
 - **Extension Plugin**: @crxjs/vite-plugin 2.0.0-beta.23
 - **Type Checking**: TypeScript strict mode enabled
 
+## Feature Flags
+
+The extension supports feature flags to control optional functionality:
+
+### ENABLE_TASK_CREATION
+
+- **Environment Variable**: `VITE_ENABLE_TASK_CREATION`
+- **Default**: `false`
+- **Purpose**: Controls whether Google Tasks integration is enabled
+- **Effects when enabled**:
+  - Adds "Create task" button in Gmail toolbar
+  - Enables OAuth sign-in flow with Google
+  - Adds sign-in and create task onboarding tiles
+  - Includes OAuth scopes in manifest.json
+  - Enables Tasks API integration
+- **Effects when disabled (default)**:
+  - Only event creation is available
+  - No OAuth flow required
+  - No OAuth scopes requested
+  - Simplified onboarding flow
+- **Implementation**: Defined in `src/shared/config.ts` and checked throughout the codebase
+- **Build-time behavior**: The manifest preparation script (`scripts/prepare-manifest.js`) conditionally includes the `oauth2` section based on this flag
+
 ## Runtime Architecture
 
 ### Background Service Worker
 
 - **File**: `src/background/service-worker.ts`
 - **Responsibilities**:
-  - OAuth flow management via `chrome.identity`
-  - Google Tasks API integration
+  - OAuth flow management via `chrome.identity` (only when `VITE_ENABLE_TASK_CREATION` is enabled)
+  - Google Tasks API integration (only when `VITE_ENABLE_TASK_CREATION` is enabled)
   - Calendar template URL construction
   - Message routing between content scripts and dashboard
   - Installation handling (opens dashboard on first install)
@@ -33,10 +56,10 @@
 - **Entry Point**: `src/content/gmail.ts`
 - **Responsibilities**:
   - Gmail DOM observation via `MutationObserver`
-  - Toolbar button injection
+  - Toolbar button injection (event button always, task button only when `VITE_ENABLE_TASK_CREATION` is enabled)
   - Email content extraction (subject, from, to, date, body)
   - On-device AI extraction via Chrome's `LanguageModel` API
-  - Review modal rendering for Tasks path
+  - Review modal rendering for Tasks path (only when `VITE_ENABLE_TASK_CREATION` is enabled)
 - **CSS**: `src/content/modal.css` (web-accessible resource)
 
 ### Dashboard (Options Page)
@@ -45,10 +68,10 @@
 - **Script**: `src/landing/dashboard.ts`
 - **Styling**: `src/landing/dashboard.css` with shared design tokens
 - **Components**:
-  - Top bar with identity chip
-  - Onboarding tiles
+  - Top bar with identity chip (only shown when `VITE_ENABLE_TASK_CREATION` is enabled)
+  - Onboarding tiles (sign-in and create task tiles only shown when `VITE_ENABLE_TASK_CREATION` is enabled)
   - AI status card
-  - Defaults card (Tasks list, event duration, timezone)
+  - Defaults card (Tasks list, event duration, timezone - tasks list only shown when `VITE_ENABLE_TASK_CREATION` is enabled)
   - Privacy card
   - Diagnostics card
   - LLM provider card (for future BYO API key support)
@@ -58,8 +81,8 @@
 ### Extension APIs
 
 - `chrome.storage.local` - State persistence (profile, defaults, completed tiles, AI status)
-- `chrome.identity.getAuthToken` - OAuth token retrieval
-- `chrome.identity.removeCachedAuthToken` - Sign-out
+- `chrome.identity.getAuthToken` - OAuth token retrieval (only when `VITE_ENABLE_TASK_CREATION` is enabled)
+- `chrome.identity.removeCachedAuthToken` - Sign-out (only when `VITE_ENABLE_TASK_CREATION` is enabled)
 - `chrome.tabs.create` - Open Calendar template URL
 - `chrome.scripting` - Dynamic content script injection
 - `chrome.runtime.onInstalled` - Installation handling
@@ -76,15 +99,18 @@
 ### OAuth 2.0
 
 - **Client Type**: Chrome Extension
-- **Scopes**:
+- **Scopes** (only requested when `VITE_ENABLE_TASK_CREATION` is enabled):
   - `openid` - OpenID Connect
   - `https://www.googleapis.com/auth/userinfo.profile` - User profile
   - `https://www.googleapis.com/auth/userinfo.email` - User email
   - `https://www.googleapis.com/auth/tasks` - Tasks API
+- **Note**: When `VITE_ENABLE_TASK_CREATION` is false (default), no OAuth scopes are requested and the manifest omits the `oauth2` section entirely.
 
 ### OAuth Setup for Publication
 
-To publish this extension with Google OAuth, you'll need to complete the following in the Google Cloud Console:
+**Note:** OAuth setup is only required when the `VITE_ENABLE_TASK_CREATION` feature flag is set to `true`. By default, the extension does not use OAuth and only provides event creation functionality.
+
+To publish this extension with Google OAuth (when task creation is enabled), you'll need to complete the following in the Google Cloud Console:
 
 #### 1. Google Cloud Console Project
 

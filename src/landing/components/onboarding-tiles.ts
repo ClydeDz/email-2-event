@@ -1,4 +1,5 @@
 import type { DashboardState, Profile } from "../../shared/types";
+import { featureFlags } from "../../shared/config";
 
 // Declare LanguageModel global
 declare const LanguageModel: {
@@ -119,69 +120,76 @@ export function renderOnboardingTiles(state: DashboardState): void {
     }),
   );
 
-  // Tile 4: Sign in
-  const tile2Done = isSignedIn || completedTiles.includes("sign-in");
-  grid.appendChild(
-    buildTile({
-      id: "sign-in",
-      icon: userIcon(),
-      title: "Sign in with Google",
-      body: "Connect your account to create Google Tasks from emails.",
-      done: tile2Done,
-      locked: !aiAvailable,
-      actions: tile2Done
-        ? []
-        : [
-            {
-              label: "Sign in",
-              primary: true,
-              onClick: async (btn) => {
-                btn.disabled = true;
-                btn.textContent = "Signing in…";
-                try {
-                  const { profile } = await sendMessage<{ profile: Profile }>({
-                    type: "SIGN_IN",
-                  });
-                  window.dispatchEvent(
-                    new CustomEvent("profile-changed", { detail: profile }),
-                  );
-                  // Re-render tiles
-                  renderOnboardingTiles({
-                    ...state,
-                    profile,
-                    completedTiles: [...completedTiles, "sign-in"],
-                  });
-                } catch (err) {
-                  btn.disabled = false;
-                  btn.textContent = "Sign in";
-                  console.error("Sign-in failed:", err);
-                }
+  // Tile 4: Sign in (only if task creation is enabled)
+  if (featureFlags.enableTaskCreation) {
+    const tile2Done = isSignedIn || completedTiles.includes("sign-in");
+    grid.appendChild(
+      buildTile({
+        id: "sign-in",
+        icon: userIcon(),
+        title: "Sign in with Google",
+        body: "Connect your account to create Google Tasks from emails.",
+        done: tile2Done,
+        locked: !aiAvailable,
+        actions: tile2Done
+          ? []
+          : [
+              {
+                label: "Sign in",
+                primary: true,
+                onClick: async (btn) => {
+                  btn.disabled = true;
+                  btn.textContent = "Signing in…";
+                  try {
+                    const { profile } = await sendMessage<{ profile: Profile }>(
+                      {
+                        type: "SIGN_IN",
+                      },
+                    );
+                    window.dispatchEvent(
+                      new CustomEvent("profile-changed", { detail: profile }),
+                    );
+                    // Re-render tiles
+                    renderOnboardingTiles({
+                      ...state,
+                      profile,
+                      completedTiles: [...completedTiles, "sign-in"],
+                    });
+                  } catch (err) {
+                    btn.disabled = false;
+                    btn.textContent = "Sign in";
+                    console.error("Sign-in failed:", err);
+                  }
+                },
               },
-            },
-          ],
-    }),
-  );
+            ],
+      }),
+    );
+  }
 
-  // Tile 5: Create a task (gated on tile 4)
-  grid.appendChild(
-    buildTile({
-      id: "create-task",
-      icon: checkIcon(),
-      title: "Create a task from Gmail",
-      body: "Try the Tasks button on an invoice or reminder email.",
-      done: completedTiles.includes("create-task"),
-      locked: !aiAvailable || !tile2Done,
-      actions: [
-        {
-          label: "Open Gmail",
-          primary: true,
-          onClick: () => {
-            chrome.tabs.create({ url: "https://mail.google.com/" });
+  // Tile 5: Create a task (gated on tile 4, only if task creation is enabled)
+  if (featureFlags.enableTaskCreation) {
+    const tile2Done = isSignedIn || completedTiles.includes("sign-in");
+    grid.appendChild(
+      buildTile({
+        id: "create-task",
+        icon: checkIcon(),
+        title: "Create a task from Gmail",
+        body: "Try the Tasks button on an invoice or reminder email.",
+        done: completedTiles.includes("create-task"),
+        locked: !aiAvailable || !tile2Done,
+        actions: [
+          {
+            label: "Open Gmail",
+            primary: true,
+            onClick: () => {
+              chrome.tabs.create({ url: "https://mail.google.com/" });
+            },
           },
-        },
-      ],
-    }),
-  );
+        ],
+      }),
+    );
+  }
 
   // Tile 6: Share with friends
   grid.appendChild(

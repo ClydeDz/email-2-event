@@ -8,9 +8,11 @@
     "types": ["chrome"],
     "baseUrl": ".",
     "ignoreDeprecations": "5.0",
+    "skipLibCheck": true,
     "paths": {
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

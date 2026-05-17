@@ -1,6 +1,8 @@
 # Email 2 Event
 
-A Chrome extension that adds "Create event" and "Create task" buttons to Gmail, using Chrome's built-in on-device AI (Gemini Nano) to extract event details and pre-populate Google Calendar or Tasks.
+A Chrome extension that adds a "Create event" button to Gmail, using Chrome's built-in on-device AI (Gemini Nano) to extract event details and pre-populate Google Calendar.
+
+**Note:** Task creation functionality is available behind a feature flag (`VITE_ENABLE_TASK_CREATION`). Set this environment variable to `true` to enable Google Tasks integration.
 
 ## On-Device AI (Gemini Nano)
 

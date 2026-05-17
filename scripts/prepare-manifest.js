@@ -33,5 +33,12 @@ if (!oauthClientId) {
 
 manifestContent = manifestContent.replace(/\$OAUTH_CLIENT_ID/g, oauthClientId);
 
+// Conditionally include OAuth scopes based on VITE_ENABLE_TASK_CREATION flag
+const enableTaskCreation = process.env.VITE_ENABLE_TASK_CREATION === "true";
+if (!enableTaskCreation) {
+  // Remove the entire oauth2 section when task creation is disabled
+  manifestContent = manifestContent.replace(/,\s*"oauth2":\s*\{[^}]*\}/g, "");
+}
+
 fs.writeFileSync(manifestPath, manifestContent);
 console.log("manifest.json generated successfully");

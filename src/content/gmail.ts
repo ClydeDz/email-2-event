@@ -11,6 +11,7 @@ import { runExtraction } from "./llm";
 import { showReviewModal } from "./review-modal";
 import type { Extraction } from "../shared/schema";
 import type { TaskList } from "../shared/types";
+import { featureFlags } from "../shared/config";
 
 const BUTTONS_ATTR = "data-gmail-ext-injected";
 const SIGN_IN_POPUP_ID = "gmail-ext-signin-popup";
@@ -357,7 +358,7 @@ function injectButtons(): void {
     setButtonLoading(eventBtn, true, EVENT_LABEL);
     try {
       const emailData = scrapeEmail();
-   
+
       if (!emailData) {
         showToast("Could not read this email. Please try again.", "error");
         return;
@@ -367,7 +368,7 @@ function injectButtons(): void {
         "Extracting event details… this may take a few moments.",
         "info",
       );
-    
+
       const extraction: Extraction = await runExtraction(emailData, "event");
 
       await sendMessage({ type: "OPEN_CALENDAR", payload: extraction });
@@ -391,7 +392,6 @@ function injectButtons(): void {
       const { profile } = await sendMessage<{ profile: unknown }>({
         type: "GET_PROFILE",
       });
-  
 
       if (!profile) {
         setButtonLoading(taskBtn, false, TASK_LABEL);
@@ -400,7 +400,7 @@ function injectButtons(): void {
       }
 
       const emailData = scrapeEmail();
-     
+
       if (!emailData) {
         showToast("Could not read this email. Please try again.", "error");
         setButtonLoading(taskBtn, false, TASK_LABEL);
@@ -437,7 +437,12 @@ function injectButtons(): void {
   });
 
   wrapper.appendChild(eventBtn);
-  wrapper.appendChild(taskBtn);
+
+  // Only add task button if task creation is enabled
+  if (featureFlags.enableTaskCreation) {
+    wrapper.appendChild(taskBtn);
+  }
+
   toolbar.appendChild(wrapper);
 }
 

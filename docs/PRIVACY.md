@@ -4,7 +4,9 @@
 
 ## Overview
 
-Email 2 Event is a Chrome extension that helps you create Google Calendar events and Google Tasks from your Gmail emails. We are committed to protecting your privacy and being transparent about how we handle your data.
+Email 2 Event is a Chrome extension that helps you create Google Calendar events from your Gmail emails. We are committed to protecting your privacy and being transparent about how we handle your data.
+
+**Note:** Google Tasks integration is available behind a feature flag (`VITE_ENABLE_TASK_CREATION`). The sections below related to Tasks, OAuth scopes, and Google Account information only apply when this feature is enabled. By default, the extension only creates Google Calendar events and does not require Google OAuth or access task-related features.
 
 ## Data We Collect
 
@@ -16,9 +18,9 @@ Email 2 Event is a Chrome extension that helps you create Google Calendar events
 
 ### Google Account Information
 
-- **What we access:** If you choose to sign in with Google, we request access to your basic profile information (name, email address, and profile picture) and permission to create tasks on your behalf.
-- **OAuth scopes requested:** `openid`, `https://www.googleapis.com/auth/userinfo.profile`, `https://www.googleapis.com/auth/userinfo.email`, `https://www.googleapis.com/auth/tasks`
-- **When we access it:** Only when you explicitly click "Sign in with Google" and authorize the extension.
+- **What we access:** If you choose to sign in with Google (when the `VITE_ENABLE_TASK_CREATION` feature flag is enabled), we request access to your basic profile information (name, email address, and profile picture) and permission to create tasks on your behalf.
+- **OAuth scopes requested:** When task creation is enabled: `openid`, `https://www.googleapis.com/auth/userinfo.profile`, `https://www.googleapis.com/auth/userinfo.email`, `https://www.googleapis.com/auth/tasks`. When task creation is disabled (default), no OAuth scopes are requested.
+- **When we access it:** Only when you explicitly click "Sign in with Google" and authorize the extension (when task creation is enabled).
 
 ### Local Storage
 
@@ -40,8 +42,8 @@ Email 2 Event is a Chrome extension that helps you create Google Calendar events
 
 ### Google Tasks
 
-- **How tasks are created:** When you click "Create task" and are signed in with Google, we use the Google Tasks API to create a task on your behalf after you review and confirm the extracted information in our modal.
-- **API scope:** We only use the `https://www.googleapis.com/auth/tasks` scope, which allows us to create tasks. We do not read, modify, or delete your existing tasks.
+- **How tasks are created:** When you click "Create task" and are signed in with Google (when the `VITE_ENABLE_TASK_CREATION` feature flag is enabled), we use the Google Tasks API to create a task on your behalf after you review and confirm the extracted information in our modal.
+- **API scope:** We only use the `https://www.googleapis.com/auth/tasks` scope, which allows us to create tasks. We do not read, modify, or delete your existing tasks. This scope is only requested when task creation is enabled.
 
 ## Data Storage and Retention
 
@@ -61,8 +63,8 @@ Email 2 Event is a Chrome extension that helps you create Google Calendar events
 
 ### Google
 
-- **Google OAuth:** We use Google's OAuth 2.0 service for sign-in. This is handled through Chrome's built-in `chrome.identity` API.
-- **Google Tasks API:** When you create a task, we make an API call to Google's servers to create that task on your behalf.
+- **Google OAuth:** We use Google's OAuth 2.0 service for sign-in when the `VITE_ENABLE_TASK_CREATION` feature flag is enabled. This is handled through Chrome's built-in `chrome.identity` API. When task creation is disabled, no OAuth is used.
+- **Google Tasks API:** When you create a task (when task creation is enabled), we make an API call to Google's servers to create that task on your behalf.
 - **Google Calendar:** We open Google Calendar's website in your browser; all interaction with Google Calendar happens directly between your browser and Google's servers.
 
 ### Chrome Built-in AI
