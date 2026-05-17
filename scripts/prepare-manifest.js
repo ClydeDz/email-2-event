@@ -1,5 +1,5 @@
 /**
- * This script generates manifest.json from manifest.json.template by applying
+ * This script generates manifest.json from manifest.template.json by applying
  * environment-specific transformations.
  *
  * Required both locally and in CI/CD:
@@ -26,7 +26,7 @@
 import fs from "fs";
 import path from "path";
 
-const templatePath = path.resolve(process.cwd(), "manifest.json.template");
+const templatePath = path.resolve(process.cwd(), "manifest.template.json");
 const manifestPath = path.resolve(process.cwd(), "dist/manifest.json");
 
 // Ensure dist directory exists

@@ -1,10 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Email 2 Event",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Create Google Calendar events from Gmail emails using on-device AI.",
-  "permissions": ["storage", "identity", "tabs"],
-   "icons": {
+  "permissions": [
+    "storage",
+    "identity",
+    "tabs"
+  ],
+  "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
@@ -19,8 +23,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://mail.google.com/*"],
-      "js": ["src/content/gmail.ts"],
+      "matches": [
+        "https://mail.google.com/*"
+      ],
+      "js": [
+        "src/content/gmail.ts"
+      ],
       "css": [],
       "run_at": "document_idle"
     }
@@ -45,12 +53,20 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["src/content/modal.css"],
-      "matches": ["https://mail.google.com/*"]
+      "resources": [
+        "src/content/modal.css"
+      ],
+      "matches": [
+        "https://mail.google.com/*"
+      ]
     },
     {
-      "resources": ["icons/icon.svg"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "icons/icon.svg"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "minimum_chrome_version": "138"
