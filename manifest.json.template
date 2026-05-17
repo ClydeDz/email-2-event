@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Email 2 Event",
-  "version": "0.3.0",
-  "description": "Create Google Calendar events and Tasks from Gmail emails using on-device AI.",
+  "version": "0.4.0",
+  "description": "Create Google Calendar events from Gmail emails using on-device AI.",
   "permissions": ["storage", "identity", "scripting", "tabs"],
    "icons": {
     "16": "icons/icon16.png",

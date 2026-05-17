@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "yarn"
 
       - name: Install dependencies
@@ -30,6 +30,7 @@ jobs:
         run: yarn build
         env:
           OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          VITE_ENABLE_TASK_CREATION: ${{ vars.VITE_ENABLE_TASK_CREATION }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
