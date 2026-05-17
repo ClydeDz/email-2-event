@@ -3,7 +3,7 @@
   "name": "Email 2 Event",
   "version": "0.4.0",
   "description": "Create Google Calendar events from Gmail emails using on-device AI.",
-  "permissions": ["storage", "identity", "scripting", "tabs"],
+  "permissions": ["storage", "identity", "tabs"],
    "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -11,8 +11,7 @@
   },
   "host_permissions": [
     "https://mail.google.com/*",
-    "https://www.googleapis.com/*",
-    "https://calendar.google.com/*"
+    "https://www.googleapis.com/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.ts",
