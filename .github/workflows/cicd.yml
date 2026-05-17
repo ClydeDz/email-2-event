@@ -1,0 +1,67 @@
+name: Build & Deploy Chrome Extension
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Run tests
+        run: yarn test
+
+      - name: Build extension
+        run: yarn build
+        env:
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          VITE_ENABLE_TASK_CREATION: ${{ vars.VITE_ENABLE_TASK_CREATION }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension
+          path: dist/
+
+  deploy:
+    name: Deploy chrome extension
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: chrome-extension
+          path: ./dist
+
+      - name: Zip contents
+        uses: montudor/action-zip@v1
+        with:
+          args: zip -qq -r extension.zip dist
+
+      - name: Publish to Chrome store
+        uses: Klemensas/chrome-extension-upload-action@v1.3
+        with:
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          app-id: ${{ secrets.CHROME_APP_ID }}
+          file-name: "./extension.zip"
