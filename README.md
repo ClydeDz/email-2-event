@@ -1,6 +1,6 @@
 # Email 2 Event
 
-A Chrome extension that adds a "Create event" button to Gmail, using Chrome's built-in on-device AI (Gemini Nano) to extract event details and pre-populate Google Calendar.
+A Chrome extension that adds a **Create event** button to Gmail to extract event details from your email and pre-populate Google Calendar, all using Chrome's built-in on-device AI (Gemini Nano).
 
 ## On-Device AI (Gemini Nano)
 

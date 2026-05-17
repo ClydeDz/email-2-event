@@ -29,6 +29,33 @@ export function renderTopBar(profile: Profile | null): void {
   `;
   inner.appendChild(wordmark);
 
+  // Action buttons container
+  const actionsContainer = document.createElement("div");
+  actionsContainer.className = "top-bar-actions";
+  actionsContainer.style.display = "flex";
+  actionsContainer.style.gap = "8px";
+  actionsContainer.style.alignItems = "center";
+
+  // Buy me a coffee button
+  const coffeeBtn = document.createElement("button");
+  coffeeBtn.className = "btn btn-sm btn-primary";
+  coffeeBtn.textContent = "Buy me a coffee";
+  coffeeBtn.addEventListener("click", () => {
+    chrome.tabs.create({ url: "https://ko-fi.com/clydedsouza" });
+  });
+  actionsContainer.appendChild(coffeeBtn);
+
+  // Subscribe to newsletter button
+  const newsletterBtn = document.createElement("button");
+  newsletterBtn.className = "btn btn-sm btn-primary";
+  newsletterBtn.textContent = "Subscribe to my newsletter";
+  newsletterBtn.addEventListener("click", () => {
+    chrome.tabs.create({ url: "https://newsletter.clydedsouza.net/" });
+  });
+  actionsContainer.appendChild(newsletterBtn);
+
+  inner.appendChild(actionsContainer);
+
   // Identity chip
   const chip = buildIdentityChip(profile);
   inner.appendChild(chip);

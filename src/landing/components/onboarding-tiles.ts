@@ -233,12 +233,38 @@ export function renderOnboardingTiles(state: DashboardState): void {
       locked: !aiAvailable,
       actions: [
         {
-          label: "Buy a coffee",
+          label: "Buy me a coffee",
           primary: true,
           onClick: async () => {
-            chrome.tabs.create({ url: "https://ko-fi.com" });
+            chrome.tabs.create({ url: "https://ko-fi.com/clydedsouza" });
             const updated = Array.from(
               new Set([...completedTiles, "support-developer"]),
+            );
+            await chrome.storage.local.set({ completedTiles: updated });
+            renderOnboardingTiles({ ...state, completedTiles: updated });
+          },
+        },
+      ],
+    }),
+  );
+
+  // Tile 8: Join newsletter
+  grid.appendChild(
+    buildTile({
+      id: "join-newsletter",
+      icon: mailIcon(),
+      title: "Join the newsletter",
+      body: "Stay updated with new features and improvements. No spam, just updates.",
+      done: completedTiles.includes("join-newsletter"),
+      locked: !aiAvailable,
+      actions: [
+        {
+          label: "Subscribe",
+          primary: true,
+          onClick: async () => {
+            chrome.tabs.create({ url: "https://newsletter.clydedsouza.net/" });
+            const updated = Array.from(
+              new Set([...completedTiles, "join-newsletter"]),
             );
             await chrome.storage.local.set({ completedTiles: updated });
             renderOnboardingTiles({ ...state, completedTiles: updated });
@@ -648,6 +674,13 @@ function coffeeIcon(): string {
     <line x1="6" y1="1" x2="6" y2="4"/>
     <line x1="10" y1="1" x2="10" y2="4"/>
     <line x1="14" y1="1" x2="14" y2="4"/>
+  </svg>`;
+}
+
+function mailIcon(): string {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
   </svg>`;
 }
 
