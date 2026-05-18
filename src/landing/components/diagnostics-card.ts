@@ -1,3 +1,5 @@
+import { featureFlags } from "../../shared/config";
+
 export function renderDiagnosticsCard(): HTMLElement {
   const details = document.createElement("details");
   details.className = "diagnostics-card";
@@ -111,9 +113,13 @@ export function renderDiagnosticsCard(): HTMLElement {
   testEventBtn.className = "btn btn-sm btn-secondary";
   testEventBtn.textContent = "Extract as event";
 
-  const testTaskBtn = document.createElement("button");
-  testTaskBtn.className = "btn btn-sm btn-secondary";
-  testTaskBtn.textContent = "Extract as task";
+  const testTaskBtn = featureFlags.enableTaskCreation
+    ? document.createElement("button")
+    : null;
+  if (testTaskBtn) {
+    testTaskBtn.className = "btn btn-sm btn-secondary";
+    testTaskBtn.textContent = "Extract as task";
+  }
 
   const testResult = document.createElement("pre");
   testResult.className = "diag-value";
@@ -132,7 +138,7 @@ export function renderDiagnosticsCard(): HTMLElement {
     }
 
     testEventBtn.disabled = true;
-    testTaskBtn.disabled = true;
+    if (testTaskBtn) testTaskBtn.disabled = true;
     testResult.style.display = "block";
     testResult.textContent = "Extracting…";
 
@@ -163,15 +169,19 @@ export function renderDiagnosticsCard(): HTMLElement {
       testResult.textContent = `Error: ${(err as Error).message}`;
     } finally {
       testEventBtn.disabled = false;
-      testTaskBtn.disabled = false;
+      if (testTaskBtn) testTaskBtn.disabled = false;
     }
   }
 
   testEventBtn.addEventListener("click", () => runTestExtraction("event"));
-  testTaskBtn.addEventListener("click", () => runTestExtraction("task"));
+  if (testTaskBtn) {
+    testTaskBtn.addEventListener("click", () => runTestExtraction("task"));
+  }
 
   testControls.appendChild(testEventBtn);
-  testControls.appendChild(testTaskBtn);
+  if (testTaskBtn) {
+    testControls.appendChild(testTaskBtn);
+  }
 
   testSection.appendChild(testLabel);
   testSection.appendChild(testTextarea);
