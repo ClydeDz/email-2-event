@@ -2,6 +2,10 @@
 
 A Chrome extension that adds a **Create event** button to Gmail to extract event details from your email and pre-populate Google Calendar, all using Chrome's built-in on-device AI (Gemini Nano).
 
+Your email content is processed locally on your device using Chrome's built-in AI (Gemini Nano). This processing happens entirely on your computer. No email content is sent to any server, including our servers or Google's servers.
+
+Chrome's built-in AI is only available on certain devices with sufficient hardware capabilities (Chrome 138 or later with ≥4 GB VRAM or capable integrated GPU), and all "Prompt API for Gemini Nano" and "Gemini Nano" chrome flags are enabled. If your device doesn't support on-device AI, the extension will show you a clear message and will not function.
+
 ## On-Device AI (Gemini Nano)
 
 This extension uses Chrome's built-in AI for private, on-device email processing. No email content is sent to any server.
@@ -25,4 +29,7 @@ To use on-device AI, you need:
   3. Relaunch Chrome
 
 If your device doesn't support on-device AI, the extension will show an "unavailable" status with instructions to check for Chrome updates or enable the required flags.
-TBC
+
+## Credits
+
+Developed by [Clyde D'Souza](https://clydedsouza.net/)
