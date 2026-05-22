@@ -170,7 +170,6 @@ async function getDashboardState(): Promise<DashboardState> {
   const stored = await chrome.storage.local.get([
     "profile",
     "completedTiles",
-    "llmProvider",
     "defaults",
     "aiStatus",
   ]);
@@ -185,7 +184,6 @@ async function getDashboardState(): Promise<DashboardState> {
   return {
     profile: stored.profile ?? null,
     completedTiles: (stored.completedTiles as string[]) ?? [],
-    llmProvider: "builtin",
     defaults:
       (stored.defaults as DashboardState["defaults"]) ?? defaultDefaults,
     aiStatus: (stored.aiStatus as DashboardState["aiStatus"]) ?? "unknown",
